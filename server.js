@@ -68,6 +68,11 @@ app.post("/products", async (req, res) => {
     return res.status(404).json({error:"Product not found"})
   }
   //       2. Insert into database
+  const result = await pool.query(
+      "INSERT INTO products (name, price, stock) VALUES ($1, $2, $3) RETURNING *",
+      [name, price, stock || 0]
+    );
+    res.status(201).json(result.rows[0]);
   //       3. Return new product
 });
 
