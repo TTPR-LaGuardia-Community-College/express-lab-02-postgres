@@ -49,7 +49,7 @@ app.get("/products", async (req, res) => {
 app.get("/products/:id", async (req, res) => {
   const productId = parseInt(req.params.id);
   try {
-    const result = await pool.query("SELECT * FROM products WHERE id = #1", [productId]);
+    const result = await pool.query("SELECT * FROM products WHERE id = $1", [productId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Product not found" });
     }
