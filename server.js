@@ -62,7 +62,11 @@ app.get("/products/:id", async (req, res) => {
 
 // POST create product
 app.post("/products", async (req, res) => {
+  const { name, price } = req.body;
   // TODO: 1. Validate required fields (name, price)
+  if (!name || price === undefined) {
+    return res.status(404).json({error:"Product not found"})
+  }
   //       2. Insert into database
   //       3. Return new product
 });
