@@ -36,14 +36,28 @@ app.get("/", (req, res) => {
 
 // GET all products
 app.get("/products", async (req, res) => {
-  // TODO: Query database and return all products
+  try {
+    const result = await pool.query("SELECT * FROM products");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching products:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 // GET single product
 app.get("/products/:id", async (req, res) => {
-  // TODO: 1. Get ID from params
-  //       2. Query database
-  //       3. Handle not found case
+  const productId = parseInt(req.params.id);
+  try {
+    const result = await pool.query("SELECT * FROM products WHERE id = $1", [productId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error fetching product:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 // POST create product
