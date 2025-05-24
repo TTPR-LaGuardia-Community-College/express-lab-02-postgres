@@ -49,7 +49,9 @@ app.get("/products", async (req, res) => {
 app.get("/products/:id", async (req, res) => {
   const productId = parseInt(req.params.id);
   try {
-    const result = await pool.query("SELECT * FROM products WHERE id = $1", [productId]);
+    const result = await pool.query("SELECT * FROM products WHERE id = $1", [
+      productId,
+    ]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Product not found" });
     }
@@ -65,16 +67,10 @@ app.post("/products", async (req, res) => {
   const { name, price } = req.body;
   // TODO: 1. Validate required fields (name, price)
   if (!name || price === undefined) {
-    return res.status(404).json({error:"Product not found"})
+    return res.status(404).json({ error: "Product not found" });
   }
   // 2. Insert into database
-  pool.query(insertQuery, [name, price], (err, result) => {
-    if (err) {
-      console.error("Insert error:", err);
-      return res.status(500).json({ error: "Failed to insert product" });
-    }
-    res.status(201).json(result.rows[0]);
-  })
+
 });
 
 // PUT update product
@@ -82,6 +78,21 @@ app.put("/products/:id", async (req, res) => {
   // TODO: 1. Get ID from params
   //       2. Validate inputs
   //       3. Update database
+  const { id } = req.params;
+  try {
+    const product = await pool.query(
+      `Select * from products where id = ${id};`
+    );
+    const { rows } = product;
+    console.log(rows);
+    if (rows.length > 0) {
+      res.send(rows[0]);
+    } else {
+      res.status(404).send({ error: "Product not found" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // DELETE product
