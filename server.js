@@ -110,6 +110,21 @@ app.put("/products/:id", async (req, res) => {
 app.delete("/products/:id", async (req, res) => {
   // TODO: 1. Delete from database
   //       2. Handle success/failure
+  const { id } = req.params;
+  try {
+    const product = await pool.query(
+      `DELETE * from products where id = ${id};`
+    );
+    const { rows } = product;
+    console.log(rows);
+    if (rows.length > 0) {
+      res.send(rows[0]);
+    } else {
+      res.status(204).send({ error: "No Content No Success" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // ------------------------------------------------
