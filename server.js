@@ -67,10 +67,21 @@ app.post("/products", async (req, res) => {
   const { name, price } = req.body;
   // TODO: 1. Validate required fields (name, price)
   if (!name || price === undefined) {
-    return res.status(404).json({ error: "Product not found" });
+    return res.status(400).json({ error: "Product not found" });
   }
   // 2. Insert into database
-
+  try {
+    const product = await pool.query(`Select * from products`)
+    const { rows } = product;
+    console.log(rows);
+    if (rows.length > 0) {
+      res.send(rows[0]);
+    } else {
+      res.status(404).send({ error: "Product not found" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
 });
 
 // PUT update product
