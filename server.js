@@ -54,6 +54,18 @@ app.get("/products/:id", async (req, res) => {
   // TODO: 1. Get ID from params
   //       2. Query database
   //       3. Handle not found case
+  try {
+    const { params: { id } } = req;
+    const query = await pool.query("SELECT * FROM products WHERE id=$1", [id]);
+    const product = query.rows[0];
+    if(!product) {
+      res.status(404).send("Product not found");
+    }
+    res.send(product);
+  }
+  catch(err) {
+    res.status(400).send("Invalid product ID");
+  }
 });
 
 // POST create product
