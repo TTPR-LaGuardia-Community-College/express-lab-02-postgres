@@ -34,7 +34,6 @@ app.get("/", (req, res) => {
     .status(200);
 });
 
-// 🎯 STUDENT TASKS: Implement these routes
 // ------------------------------------------------
 
 // GET all products
@@ -158,7 +157,6 @@ app.delete("/products/:id", async (req, res) => {
 });
 
 // ------------------------------------------------
-// 🚫 Do not modify below this line
 
 app.use(express.json());
 
