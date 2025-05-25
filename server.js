@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const { Pool } = require("pg");
+const { Pool } = require(`pg`);
 const app = express();
 const PORT = 3000;
 
@@ -49,16 +49,14 @@ app.get("/products", async (req, res) => {
 app.get("/products/:id", async (req, res) => {
   const productId = parseInt(req.params.id);
   try {
-    const result = await pool.query("SELECT * FROM products WHERE id = $1", [
-      productId,
-    ]);
-    if (result.rows.length === 0) {
+    const product = await pool.query(`SELECT * FROM products WHERE id = ${productId};`)
+    if (product.rows.length === 0) {
       return res.status(404).json({ error: "Product not found" });
+    } else {
+      res.json(product.rows[0]);
     }
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error("Error fetching product:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (error) {
+    res.status(400).json({ error: "Invalid product ID" });
   }
 });
 
@@ -110,20 +108,20 @@ app.put("/products/:id", async (req, res) => {
 app.delete("/products/:id", async (req, res) => {
   // TODO: 1. Delete from database
   //       2. Handle success/failure
-  const { id } = req.params;
+  const { id }= req.params;
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid product ID provided.' });
+  }
   try {
-    const product = await pool.query(
-      `DELETE * from products where id = ${id};`
-    );
-    const { rows } = product;
-    console.log(rows);
-    if (rows.length > 0) {
-      res.send(rows[0]);
+    const result = await pool.query(`DELETE FROM products WHERE id = $1`, [id])
+    if (result.rowCount > 0) {
+      res.status(204).send()
     } else {
-      res.status(204).send({ error: "No Content No Success" });
+      res.status(404).json({ error: `Product with ID ${id} not found.` })
     }
   } catch (error) {
-    console.log(error);
+    console.error('Error deleting product:', error);
+    res.status(400).json({ error: 'Invalid ID format' });
   }
 });
 
