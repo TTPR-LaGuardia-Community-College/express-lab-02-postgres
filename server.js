@@ -68,7 +68,7 @@ app.get("/products/:id", async (req, res) => {
 const allowed = ["id", "name", "price", "stock"];
 
 // Used as safeguard against SQL injection in POST fields
-function getProduct(req, allowed) {
+function getProductFromReq(req, allowed) {
   let product = {};
   for(const key of allowed) {
     if(key in req.body) {
@@ -81,7 +81,7 @@ function getProduct(req, allowed) {
 // POST create product
 app.post("/products", async (req, res) => {
   // Get product
-  let product = getProduct(req, allowed);
+  let product = getProductFromReq(req, allowed);
   // Validate data
   if(!product.name || product.price === undefined) {
     return res.status(400).send("Missing required fields");
@@ -94,13 +94,13 @@ app.post("/products", async (req, res) => {
   const values = Object.values(product);
   const placeholders = values.map((_, i) => "$" + (i + 1));
   try {
-    result = await pool.query(
+    const query = await pool.query(
       `INSERT INTO products (${columns.join(", ")}) 
       VALUES (${placeholders.join(", ")})
       RETURNING *`, 
       values
     );
-    product = result.rows[0];
+    product = query.rows[0];
     product.price = Number(product.price);
   }
   catch(err) {
@@ -111,10 +111,33 @@ app.post("/products", async (req, res) => {
 
 // PUT update product
 app.put("/products/:id", async (req, res) => {
-  // TODO: 1. Get ID from params
-  //       2. Validate inputs
-  //       3. Update database
-  
+  const { params: { id } } = req;
+  const query = await pool.query("SELECT * FROM products WHERE id=$1", [id]);
+  const oldProduct = query.rows[0];
+  if(!oldProduct) {
+    return res.status(404).send("Non-existent product");
+  }
+  const updates = getProductFromReq(req, allowed);
+  const { name, price, stock } = updates;
+  if(name !== undefined && (name === "" || name.length > 255)) {
+    return res.status(400).send("Invalid name");
+  }
+  if(price < 0 || stock < 0) {
+    return res.status(400).send("Invalid data");
+  }
+  const columns = Object.keys(updates);
+  const values = Object.values(updates);
+  const colAssign = columns.map((col, i) => `${col} = $${i+1}`);
+  values.push(id);
+  const updateQuery = await pool.query(
+    `UPDATE products
+    SET ${colAssign.join(", ")}
+    WHERE id=$${values.length}
+    RETURNING *`,
+    values
+  );
+  const updatedProduct = updateQuery.rows[0];
+  res.send(updatedProduct);
 });
 
 // DELETE product
