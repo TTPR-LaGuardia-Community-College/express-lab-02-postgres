@@ -67,15 +67,21 @@ app.get("/products/:id", async (req, res) => {
 // Used for POST /products
 const allowed = ["id", "name", "price", "stock"];
 
-// POST create product
-app.post("/products", async (req, res) => {
-  // Prevent SQL injection in fields
+// Used as safeguard against SQL injection in POST fields
+function getProduct(req, allowed) {
   let product = {};
   for(const key of allowed) {
     if(key in req.body) {
       product[key] = req.body[key];
     }
   }
+  return product;
+}
+
+// POST create product
+app.post("/products", async (req, res) => {
+  // Get product
+  let product = getProduct(req, allowed);
   // Validate data
   if(!product.name || product.price === undefined) {
     return res.status(400).send("Missing required fields");
@@ -108,6 +114,7 @@ app.put("/products/:id", async (req, res) => {
   // TODO: 1. Get ID from params
   //       2. Validate inputs
   //       3. Update database
+  
 });
 
 // DELETE product
