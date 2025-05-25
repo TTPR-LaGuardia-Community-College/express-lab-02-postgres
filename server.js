@@ -39,7 +39,6 @@ app.get("/", (req, res) => {
 
 // GET all products
 app.get("/products", async (req, res) => {
-  // TODO: Query database and return all products
   try {
     const products = await pool.query("SELECT * FROM products");
     res.send(products.rows);
@@ -51,9 +50,6 @@ app.get("/products", async (req, res) => {
 
 // GET single product
 app.get("/products/:id", async (req, res) => {
-  // TODO: 1. Get ID from params
-  //       2. Query database
-  //       3. Handle not found case
   try {
     const { params: { id } } = req;
     const query = await pool.query("SELECT * FROM products WHERE id=$1", [id]);
