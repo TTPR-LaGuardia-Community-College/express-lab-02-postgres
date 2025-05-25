@@ -66,9 +66,36 @@ app.get("/products/:id", async (req, res) => {
 
 // POST create product
 app.post("/products", async (req, res) => {
-  // TODO: 1. Validate required fields (name, price)
-  //       2. Insert into database
-  //       3. Return new product
+  // Prevent SQL injection in fields
+  const allowed = ["name", "price", "stock"];
+  let product = {};
+  for(const key of allowed) {
+    if(key in req.body) {
+      product[key] = req.body[key];
+    }
+  }
+  // Validate data
+  const { name, price, stock } = product;
+  if(name === undefined || price === undefined || name === "") {
+    return res.status(400).send("Missing required fields");
+  }
+  if(name.length > 255 || price < 0 || (stock && stock < 0)) {
+    return res.status(400).send("Invalid data");
+  }
+  // Insert into database
+  const columns = Object.keys(product);
+  const values = Object.values(product);
+  const placeholders = values.map((_, i) => "$" + (i + 1));
+  try {
+    await pool.query(
+      `INSERT INTO products (${columns.join(", ")}) 
+      VALUES (${placeholders.join(", ")})`, values
+    );
+  }
+  catch(err) {
+    return res.status(500).send("Internal server error");
+  }
+  res.send(product);
 });
 
 // PUT update product
