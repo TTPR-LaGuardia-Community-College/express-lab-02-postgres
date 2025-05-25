@@ -12,14 +12,15 @@ const pool = new Pool({
   port: process.env.PG_PORT,
 });
 
-app.use(express.json())
+app.use(express.json());
 
 // Health Check Endpoint
 app.get("/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
     res.json({ status: "ok", database: "connected" });
-  } catch (err) {
+  } 
+  catch (err) {
     res.status(500).json({ status: "error", database: "disconnected" });
   }
 });
@@ -28,7 +29,7 @@ app.get("/", (req, res) => {
   res
     .json({
       "Express & Postgres Lab - Home Page":
-        "Welcome to the Express & Postgres Lab!",
+      "Welcome to the Express & Postgres Lab!",
     })
     .status(200);
 });
@@ -39,6 +40,13 @@ app.get("/", (req, res) => {
 // GET all products
 app.get("/products", async (req, res) => {
   // TODO: Query database and return all products
+  try {
+    const products = await pool.query("SELECT * FROM products");
+    res.send(products.rows);
+  }
+  catch(err) {
+    res.status(500).send("Internal server error");
+  }
 });
 
 // GET single product
