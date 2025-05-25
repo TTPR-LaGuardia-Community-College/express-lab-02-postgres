@@ -44,7 +44,7 @@ app.get("/products", async (req, res) => {
     res.send(products.rows);
   }
   catch(err) {
-    res.status(500).send("Internal server error");
+    return res.status(500).send("Internal server error");
   }
 });
 
@@ -55,19 +55,21 @@ app.get("/products/:id", async (req, res) => {
     const query = await pool.query("SELECT * FROM products WHERE id=$1", [id]);
     const product = query.rows[0];
     if(!product) {
-      res.status(404).send("Product not found");
+      return res.status(404).send({ error: "Product not found" });
     }
     res.send(product);
   }
   catch(err) {
-    res.status(400).send("Invalid product ID");
+    return res.status(400).send({ error: "Invalid product ID" });
   }
 });
+
+// Used for POST /products
+const allowed = ["id", "name", "price", "stock"];
 
 // POST create product
 app.post("/products", async (req, res) => {
   // Prevent SQL injection in fields
-  const allowed = ["name", "price", "stock"];
   let product = {};
   for(const key of allowed) {
     if(key in req.body) {
@@ -75,11 +77,10 @@ app.post("/products", async (req, res) => {
     }
   }
   // Validate data
-  const { name, price, stock } = product;
-  if(name === undefined || price === undefined || name === "") {
+  if(!product.name || product.price === undefined) {
     return res.status(400).send("Missing required fields");
   }
-  if(name.length > 255 || price < 0 || (stock && stock < 0)) {
+  if(product.name.length > 255 || product.price < 0 || product.stock < 0) {
     return res.status(400).send("Invalid data");
   }
   // Insert into database
@@ -87,15 +88,19 @@ app.post("/products", async (req, res) => {
   const values = Object.values(product);
   const placeholders = values.map((_, i) => "$" + (i + 1));
   try {
-    await pool.query(
+    result = await pool.query(
       `INSERT INTO products (${columns.join(", ")}) 
-      VALUES (${placeholders.join(", ")})`, values
+      VALUES (${placeholders.join(", ")})
+      RETURNING *`, 
+      values
     );
+    product = result.rows[0];
+    product.price = Number(product.price);
   }
   catch(err) {
     return res.status(500).send("Internal server error");
   }
-  res.send(product);
+  res.status(201).send(product);
 });
 
 // PUT update product
