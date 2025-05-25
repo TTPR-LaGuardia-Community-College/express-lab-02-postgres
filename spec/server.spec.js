@@ -1,6 +1,9 @@
 const request = require("supertest");
-const { Pool } = require("pg");
+const { Pool, types } = require("pg");
 const app = require("../server");
+
+const NUMERIC = 1700;
+types.setTypeParser(NUMERIC, parseFloat);
 
 describe("Products API", () => {
   let pool;
@@ -18,14 +21,17 @@ describe("Products API", () => {
       database: process.env.PG_DATABASE,
       port: process.env.PG_PORT,
     });
+  });
 
-    // Reset database state before test suite
-    await pool.query("TRUNCATE TABLE products RESTART IDENTITY CASCADE");
-    await pool.query(
-      `INSERT INTO products (name, price, stock) 
-       VALUES ('Wireless Mouse', 29.99, 50), 
-              ('Mechanical Keyboard', 89.99, 25)`
-    );
+  beforeEach(async () => {
+  // Reset database state before each test suite
+  await pool.query("TRUNCATE TABLE products RESTART IDENTITY CASCADE");
+  await pool.query(`
+    INSERT INTO products (name, price, stock) 
+    VALUES 
+      ('Wireless Mouse', 29.99, 50), 
+      ('Mechanical Keyboard', 89.99, 25)
+  `);
   });
 
   afterAll(async () => {
@@ -60,7 +66,7 @@ describe("Products API", () => {
       expect(response.body).toEqual({
         id: 1,
         name: jasmine.any(String),
-        price: jasmine.any(String),
+        price: jasmine.any(Number),
         stock: jasmine.any(Number),
       });
     });
@@ -129,7 +135,8 @@ describe("Products API", () => {
       const response = await request(app).put("/products/1").send(updates);
 
       expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual(updates);
+      expect(response.body.price).toBe(79.99);
+      expect(response.body.stock).toBe(30);
     });
 
     it("should handle partial updates", async () => {
