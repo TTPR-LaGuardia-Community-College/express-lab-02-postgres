@@ -142,8 +142,19 @@ app.put("/products/:id", async (req, res) => {
 
 // DELETE product
 app.delete("/products/:id", async (req, res) => {
-  // TODO: 1. Delete from database
-  //       2. Handle success/failure
+  try {
+    const { params: { id } } = req;
+    const query = await pool.query("SELECT * FROM products WHERE id=$1", [id]);
+    const product = query.rows[0];
+    if(!product) {
+      return res.status(404).send("Non-existent product");
+    }
+    await pool.query("DELETE FROM products WHERE id=$1", [id]);
+    res.status(204).send();
+  }
+  catch(err) {
+    return res.status(400).send("Invalid product ID");
+  }
 });
 
 // ------------------------------------------------
