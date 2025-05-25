@@ -10,7 +10,7 @@ describe("Products API", () => {
     stock: 10,
   };
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     pool = new Pool({
       host: process.env.PG_HOST,
       user: process.env.PG_USER,
@@ -52,7 +52,8 @@ describe("Products API", () => {
       expect(response.body.length).toBe(2);
     });
   });
-
+  //
+  //
   describe("GET /products/:id", () => {
     it("should return a specific product", async () => {
       const response = await request(app).get("/products/1");
@@ -123,7 +124,45 @@ describe("Products API", () => {
     });
   });
 
-  describe("PUT /products/:id", () => {
+  // describe("PUT /products/:id", () => {
+  //   it("should update an existing product", async () => {
+  //     const updates = { price: 79.99, stock: 30 };
+  //     const response = await request(app).put("/products/1").send(updates);
+  //
+  //     expect(response.statusCode).toBe(200);
+  //     expect(response.body).toEqual(updates);
+  //   });
+  //
+  //   it("should handle partial updates", async () => {
+  //     const updates = { stock: 15 };
+  //     const response = await request(app).put("/products/2").send(updates);
+  //
+  //     expect(response.statusCode).toBe(200);
+  //     expect(response.body.stock).toBe(15);
+  //     // Verify other fields remain unchanged
+  //     expect(response.body.name).toBe("Mechanical Keyboard");
+  //     expect(response.body.price).toBe(89.99);
+  //   });
+  //
+  //   it("should return 404 for non-existent product", async () => {
+  //     const response = await request(app)
+  //       .put("/products/999")
+  //       .send({ price: 10 });
+  //
+  //     expect(response.statusCode).toBe(404);
+  //   });
+  //
+  //   it("should validate update data", async () => {
+  //     const badUpdates = [{ price: -10 }, { stock: -5 }, { name: "" }];
+  //
+  //     for (const body of badUpdates) {
+  //       const response = await request(app).put("/products/1").send(body);
+  //       expect(response.statusCode).toBe(400);
+  //     }
+  //   });
+  // });
+
+describe("PUT /products/:id", () => {
     it("should update an existing product", async () => {
       const updates = { price: 79.99, stock: 30 };
       const response = await request(app).put("/products/1").send(updates);
