@@ -1,8 +1,10 @@
 require("dotenv").config();
 const express = require("express");
-const { Pool } = require(`pg`);
+const { Pool } = require("pg");
 const app = express();
 const PORT = 3000;
+
+app.use(express.json());
 
 const pool = new Pool({
   host: process.env.PG_HOST,
@@ -12,7 +14,7 @@ const pool = new Pool({
   port: process.env.PG_PORT,
 });
 
-// Health Check Endpoint
+// Health Check
 app.get("/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
@@ -23,16 +25,11 @@ app.get("/health", async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res
-    .json({
-      "Express & Postgres Lab - Home Page":
-        "Welcome to the Express & Postgres Lab!",
-    })
-    .status(200);
+  res.status(200).json({
+    "Express & Postgres Lab - Home Page":
+      "Welcome to the Express & Postgres Lab!",
+  });
 });
-
-// 🎯 STUDENT TASKS: Implement these routes
-// ------------------------------------------------
 
 // GET all products
 app.get("/products", async (req, res) => {
@@ -47,89 +44,124 @@ app.get("/products", async (req, res) => {
 
 // GET single product
 app.get("/products/:id", async (req, res) => {
-  const productId = parseInt(req.params.id);
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: "Invalid product ID" });
+  }
+
   try {
-    const product = await pool.query(`SELECT * FROM products WHERE id = ${productId};`)
-    if (product.rows.length === 0) {
+    const result = await pool.query("SELECT * FROM products WHERE id = $1", [
+      id,
+    ]);
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: "Product not found" });
-    } else {
-      res.json(product.rows[0]);
     }
+    const product = result.rows[0];
+    product.price = Number(product.price);
+    product.stock = Number(product.stock);
+    res.json(product);
   } catch (error) {
-    res.status(400).json({ error: "Invalid product ID" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // POST create product
 app.post("/products", async (req, res) => {
-  const { name, price } = req.body;
-  // TODO: 1. Validate required fields (name, price)
-  if (!name || price === undefined) {
-    return res.status(400).json({ error: "Product not found" });
+  const { name, price, stock } = req.body;
+
+  if (
+    typeof name !== "string" || name.trim() === "" || name.length > 255 ||
+    typeof price !== "number" || price < 0 ||
+    (stock !== undefined && (typeof stock !== "number" || stock < 0))
+  ) {
+    return res.status(400).json({ error: "Invalid product data" });
   }
-  // 2. Insert into database
+
+  const safeStock = stock === undefined ? 0 : stock;
+
   try {
-    const product = await pool.query(`Select * from products`)
-    const { rows } = product;
-    console.log(rows);
-    if (rows.length > 0) {
-      res.send(rows[0]);
-    } else {
-      res.status(404).send({ error: "Product not found" });
-    }
+    const result = await pool.query(
+      "INSERT INTO products (name, price, stock) VALUES ($1, $2, $3) RETURNING *",
+      [name, price, safeStock]
+    );
+    const product = result.rows[0];
+    product.price = Number(product.price);
+    product.stock = Number(product.stock);
+    res.status(201).json(product);
   } catch (error) {
-    console.log(error);
+    console.error("Error inserting product:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // PUT update product
 app.put("/products/:id", async (req, res) => {
-  // TODO: 1. Get ID from params
-  //       2. Validate inputs
-  //       3. Update database
-  const { id } = req.params;
+  const id = parseInt(req.params.id);
+  const { name, price, stock } = req.body;
+
+  if (isNaN(id)) {
+    return res.status(400).json({ error: "Invalid product ID" });
+  }
+
+  if (
+    (name !== undefined && (typeof name !== "string" || name.trim() === "")) ||
+    (price !== undefined && (typeof price !== "number" || price < 0)) ||
+    (stock !== undefined && (typeof stock !== "number" || stock < 0))
+  ) {
+    return res.status(400).json({ error: "Invalid update data" });
+  }
+
   try {
-    const product = await pool.query(
-      `Select * from products where id = ${id};`
+    const result = await pool.query(
+      `UPDATE products SET 
+        name = COALESCE($1, name), 
+        price = COALESCE($2, price), 
+        stock = COALESCE($3, stock) 
+       WHERE id = $4 
+       RETURNING *`,
+      [
+        name === undefined ? null : name,
+        price === undefined ? null : price,
+        stock === undefined ? null : stock,
+        id,
+      ]
     );
-    const { rows } = product;
-    console.log(rows);
-    if (rows.length > 0) {
-      res.send(rows[0]);
-    } else {
-      res.status(404).send({ error: "Product not found" });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Product not found" });
     }
+
+    const product = result.rows[0];
+    product.price = Number(product.price);
+    product.stock = Number(product.stock);
+    res.json(product);
   } catch (error) {
-    console.log(error);
+    console.error("Error updating product:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // DELETE product
 app.delete("/products/:id", async (req, res) => {
-  // TODO: 1. Delete from database
-  //       2. Handle success/failure
-  const { id }= req.params;
-  if (!id || isNaN(id)) {
-    return res.status(400).json({ error: 'Invalid product ID provided.' });
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: "Invalid product ID provided." });
   }
+
   try {
-    const result = await pool.query(`DELETE FROM products WHERE id = $1`, [id])
+    const result = await pool.query("DELETE FROM products WHERE id = $1", [id]);
     if (result.rowCount > 0) {
-      res.status(204).send()
+      res.status(204).send();
     } else {
-      res.status(404).json({ error: `Product with ID ${id} not found.` })
+      res.status(404).json({ error: `Product with ID ${id} not found.` });
     }
   } catch (error) {
-    console.error('Error deleting product:', error);
-    res.status(400).json({ error: 'Invalid ID format' });
+    console.error("Error deleting product:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// ------------------------------------------------
-// 🚫 Do not modify below this line
-
-app.use(express.json());
-
+// Generic error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Internal server error" });
