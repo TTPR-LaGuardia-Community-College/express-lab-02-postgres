@@ -130,7 +130,7 @@ app.post("/products", async (req, res) => {
 
 });
 
-// PUT update product
+// PUT update product 
 app.put("/products/:id", async (req, res) => {
     // TODO: 1. Get ID from params
     //       2. Validate inputs
