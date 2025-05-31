@@ -52,9 +52,11 @@ app.get("/products/:id", async (req, res) => {
   //       3. Handle not found case
   try{
     const id = req.params.id;
+    //const {id} = req.params;
     const result = await pool.query("SELECT * FROM products WHERE id = $1", [id]);
+    // const result = await pool.query("SELECT * From products where id = ${id}");
     //handle not found case
-    if(result.rows[0] === 0){
+    if(result.rows[0] === 0){ //cuz what we care is in rows, which is an array, const {rows} = product
       return res.status(404).json({status: "error", database: "Product not found"});
     }
 
