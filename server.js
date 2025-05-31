@@ -12,6 +12,8 @@ const pool = new Pool({
   port: process.env.PG_PORT,
 });
 
+app.use(express.json())
+
 // Health Check Endpoint
 app.get("/health", async (req, res) => {
   try {
