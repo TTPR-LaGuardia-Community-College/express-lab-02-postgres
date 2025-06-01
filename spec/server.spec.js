@@ -126,10 +126,12 @@ describe("Products API", () => {
   describe("PUT /products/:id", () => {
     it("should update an existing product", async () => {
       const updates = { price: 79.99, stock: 30 };
+      const { rows } = await pool.query(`select * from products where id=1`);
+      const oldValue = rows[0];
       const response = await request(app).put("/products/1").send(updates);
 
       expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual(updates);
+      expect(response.body).toEqual({ ...oldValue, ...updates });
     });
 
     it("should handle partial updates", async () => {
