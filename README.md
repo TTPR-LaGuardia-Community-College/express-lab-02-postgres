@@ -1,5 +1,39 @@
 # Express Lab 2: PostgreSQL CRUD - Products API
 
+# Express + PostgreSQL Products API
+
+This is a full CRUD API built with Node.js, Express, and PostgreSQL.  
+It manages a `products` table with endpoints to create, read, update, and delete product data.
+
+---
+
+## Features
+
+- `GET /health` → Verify DB connection
+- `GET /products` → List all products
+- `GET /products/:id` → Get product by ID
+- `POST /products` → Add a new product (with validation)
+- `PUT /products/:id` → Update a product (with validation)
+- `DELETE /products/:id` → Delete a product
+
+---
+
+## Manual Testing
+
+Test routes using **Postman** or **browser** (for GETs):
+- `http://localhost:3000/health`
+- `http://localhost:3000/products`
+- `http://localhost:3000/products/:id`
+
+---
+
+## Environment Setup
+
+Create a `.env` file in the root:
+
+
+
+
 ## 📋 Prereqs:
 
 1. Install PostgreSQL
